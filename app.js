@@ -1,41 +1,22 @@
-const http = require('http');
-const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-const server = http.createServer((req, res) => {
-    const url = req.url;
-    const method = req.method;
+const app = express();
 
-    if (url === '/') {
-        res.write('<html>');
-        res.write('<head><title>My first page</title></head>');
-        res.write('<body><form action="/message" method="POST"><input type="text" name="message"/><button type="submit">Send</button></form></body>');
-        res.write('</html>');
-        return res.end();
-    }
+app.set('view engine', 'ejs');
+app.set('views', 'views');
 
-    if (url === '/message' && method === 'POST') {
-        const body = [];
+const adminRouters = require('./routes/admin');
+const shopRoutes = require('./routes/shop');
+const errorController = require('./controllers/error');
 
-        req.on('data', (chunk) => {
-            console.log(chunk)
-            body.push(chunk);
-        });
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-        req.on('end', () => {
-            const parsedBody = Buffer.concat(body).toString();
-            const message = parsedBody.split('=')[1];
-            fs.writeFileSync('message.txt', message);
-        });
-        res.statusCode = 302;
-        res.setHeader('Location', '/');
-        return res.end();
-    }
+app.use('/admin', adminRouters);
+app.use(shopRoutes);
 
-    res.setHeader('Content-Type', 'text/html');
-    res.write('<html>');
-    res.write('<head><title>My first page</title></head><body>Hello from my nodejs server</body>');
-    res.write('</html>');
-    res.end();
-});
+app.use(errorController.get404);
 
-server.listen(3000);
+app.listen(3000);
