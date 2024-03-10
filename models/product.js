@@ -1,3 +1,4 @@
+const { rejects } = require('assert');
 const fs = require('fs');
 const path = require('path');
 
@@ -7,13 +8,15 @@ const p = path.join(
   'products.json'
 );
 
-const getProductsFromFile = cb => {
-  fs.readFile(p, (err, fileContent) => {
-    if (err) {
-      cb([]);
-    } else {
-      cb(JSON.parse(fileContent));
-    }
+const getProductsFromFile = () => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(p, (err, fileContent) => {
+      if (err) {
+        reject(new Error('Loading file is failed.'));
+      } else {
+        resolve(JSON.parse(fileContent));
+      }
+    });
   });
 };
 
@@ -34,7 +37,19 @@ module.exports = class Product {
     });
   }
 
-  static fetchAll(cb) {
-    getProductsFromFile(cb);
+  static fetchAll() {
+    return getProductsFromFile().then((products) => {
+      return products;
+    });
+  }
+
+  static fetchProduct(productId) {
+    return getProductsFromFile().then((products) => {
+        const requestedProduct = products.find((product) => {
+          return product.id === productId;
+        });
+
+        return requestedProduct;
+    });
   }
 };
